@@ -37,6 +37,7 @@ async function run() {
     try {
       await client.connect();
       const partsCollection = client.db('autoparts').collection('tools');
+      const orderCollection = client.db('autoparts').collection('order');
       
   
       
@@ -56,7 +57,20 @@ async function run() {
     });
 
 
-      
+    app.get('/order', async (req, res) => {
+        const query = {};
+        const cursor = orderCollection.find(query);
+        const parts = await cursor.toArray();
+        res.send(parts);
+    });
+
+
+       // post
+    app.post('/order', async (req, res) => {
+        const newItem = req.body;
+        const result = await orderCollection.insertOne(newItem);
+        res.send(result)
+    });
   
     }
     finally {
