@@ -22,7 +22,7 @@ function verifyJWT(req, res, next) {
       return res.status(401).send({ message: 'UnAuthorized access' });
     }
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    jwt.verify(token, process.env.TOKEN, function (err, decoded) {
       if (err) {
         return res.status(403).send({ message: 'Forbidden access' })
       }
@@ -38,8 +38,21 @@ async function run() {
       await client.connect();
       const partsCollection = client.db('autoparts').collection('tools');
       const orderCollection = client.db('autoparts').collection('order');
+      const userCollection = client.db('autoparts').collection('user');
+      const reviewCollection = client.db('autoparts').collection('review');
       
   
+
+      const verifyAdmin = async (req, res, next) => {
+        const requester = req.decoded.email;
+        const requesterAccount = await userCollection.findOne({ email: requester });
+        if (requesterAccount.role === 'admin') {
+          next();
+        }
+        else {
+          res.status(403).send({ message: 'forbidden' });
+        }
+      }
       
       // get
       app.get('/parts', async (req, res) => {
@@ -49,6 +62,16 @@ async function run() {
         res.send(parts);
     });
 
+    // getting review
+      app.get('/review', async (req, res) => {
+        const query = {};
+        const cursor = reviewCollection.find(query);
+        const review = await cursor.toArray();
+        res.send(review);
+    });
+
+
+    
     app.get('/parts/:id' , async(req, res) => {
         const id = req.params.id;
         const query = {_id: ObjectId(id)};
@@ -71,8 +94,62 @@ async function run() {
         const result = await orderCollection.insertOne(newItem);
         res.send(result)
     });
+
+
+    //  review post 
+       // post
+       app.post('/review', async (req, res) => {
+        const newItem = req.body;
+        const result = await reviewCollection.insertOne(newItem);
+        res.send(result)
+    });
+
+
+
+    app.get('/user',  async (req, res) => {
+        const users = await userCollection.find().toArray();
+        res.send(users);
+    });
+    app.post('/user',  async (req, res) => {
+        const users = await userCollection.find().toArray();
+        res.send(users);
+    });
+
+        app.get('/admin/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === 'admin';
+      res.send({ admin: isAdmin })
+    })
+
+    app.put('/user/:email', async (req, res) => {
+        const email = req.params.email;
+        const user = req.body;
+        const filter = { email: email };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: user,
+        };
+        const result = await userCollection.updateOne(filter, updateDoc, options);
+        const token = jwt.sign({ email: email }, process.env.TOKEN, { expiresIn: '1h' })
+        res.send({ result, token });
+      });
+
+    app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: 'admin' },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
   
     }
+
+
+
+
     finally {
   
     }
