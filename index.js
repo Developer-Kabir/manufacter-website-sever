@@ -8,9 +8,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
-const firebaseLive = "https://elegent-autoparts.web.app"
 
-app.use(cors({firebaseLive} ));
+app.use(cors());
 app.use(express.json());
 
 
