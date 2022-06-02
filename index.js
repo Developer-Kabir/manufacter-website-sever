@@ -8,8 +8,11 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+const firebaseLive = "https://elegent-autoparts.web.app"
+
+app.use(cors({firebaseLive} ));
 app.use(express.json());
+
 
 const uri = `mongodb://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0-shard-00-00.hkeao.mongodb.net:27017,cluster0-shard-00-01.hkeao.mongodb.net:27017,cluster0-shard-00-02.hkeao.mongodb.net:27017/?ssl=true&replicaSet=atlas-7i6kd9-shard-0&authSource=admin&retryWrites=true&w=majority`;
 
@@ -152,3 +155,5 @@ app.get('/', (req, res) => {
   app.listen(port, () => {
     console.log(`Elegent Autoparts listening on port ${port}`)
   })
+
+  
